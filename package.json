@@ -1,0 +1,18 @@
+{
+  "name": "dynamic-scroll",
+  "version": "0.0.1",
+  "description": "Render elements dynamically to reduce the amount of DOM elements on the screen.",
+  "main": "src/index.js",
+  "directories": {
+    "example": "example"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "scroll",
+    "dynamic"
+  ],
+  "author": "jeno5980515",
+  "license": "ISC"
+}
