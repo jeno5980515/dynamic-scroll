@@ -21,11 +21,8 @@ const createScroll = ({ container, elements }) => {
   containerWrapper.style.width = `${containerWidth - scrollBarWidth}px`;
   containerWrapper.style.height = `${container.clientHeight}px`;
   containerWrapper.style.overflowY = 'hidden';
-  containerWrapper.style.zIndex = -1;
 
   wrapper.style.position = 'absolute';
-
-  fakeDiv.style.zIndex = 1;
 
   containerWrapper.appendChild(wrapper);
   container.appendChild(containerWrapper);
@@ -76,6 +73,8 @@ const createScroll = ({ container, elements }) => {
       currentIndex = index;
     })
   });
-  
+  containerWrapper.addEventListener('wheel', (e) => {
+    container.scrollTop += e.deltaY; 
+  });
   preRender();
 }
