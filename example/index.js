@@ -20,6 +20,7 @@ const elements = Array(100)
   .map(() => Math.floor(Math.random() * 5)  )
   .map(i => {
     const div = document.createElement('div');
+    div.classList.add('element');
     div.innerText = stringList[i];
     div.style.background = colorList[i];
     return div

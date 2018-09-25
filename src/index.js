@@ -31,8 +31,8 @@ const createScroll = ({ container, elements }) => {
   const preRender = () => {
     const content = Array.from(renderElements)
       .reduce((cal, e) => {
-        // todo: assign attribute
-        return `${cal}<div class="element" style="background: ${e.style.background}">${e.innerHTML}</div>`;
+        const attributes = Array.from(e.attributes).map(attr => `${attr.name}="${attr.value}"`).join(' ');
+        return `${cal}<div ${attributes}>${e.innerHTML}</div>`;
       }, '');
     fakeDiv.innerHTML = content;
     window.requestAnimationFrame(() => {
@@ -51,8 +51,9 @@ const createScroll = ({ container, elements }) => {
   const render = (index) => {
     let renderContent = '';
     for (let i = index; i < index + renderCount & i < renderElements.length; i ++ ){
-      // todo: assign attribute
-      renderContent += `<div class="element" style="background: ${renderElements[i].style.background}">${renderElements[i].innerHTML}</div>`
+      const e = renderElements[i];
+      const attributes = Array.from(e.attributes).map(attr => `${attr.name}="${attr.value}"`).join(' ');
+      renderContent += `<div ${attributes}>${e.innerHTML}</div>`
     }
     wrapper.innerHTML = renderContent;
   }
