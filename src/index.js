@@ -1,15 +1,17 @@
 const createScroll = ({ container, elements }) => {
-  const containerWrapper = document.createElement('div');
   const wrapper = document.createElement('div');
-  const fakeDiv = document.createElement('div');
   const containerWidth = container.clientWidth;
-  const containerHeight = container.clientHeight;
   const borderTop = container.offsetTop;
+  const debounceTime = 100;
+  let containerHeight = container.clientHeight;
   let renderElements = elements;
   let cache = [];
 
   // ToDo: calculate minimum render amount
   let renderCount = 10;
+  let bufferCount = 5;
+  let currentTopIndex = 0;
+  let currentBottomIndex = currentTopIndex + renderCount;
   let currentIndex = 0;
 
   // todo: get scrollbar
@@ -17,16 +19,12 @@ const createScroll = ({ container, elements }) => {
 
   container.style.overflowY = 'scroll';
 
-  containerWrapper.style.position = 'absolute';
-  containerWrapper.style.width = `${containerWidth - scrollBarWidth}px`;
-  containerWrapper.style.height = `${container.clientHeight}px`;
-  containerWrapper.style.overflowY = 'hidden';
+  wrapper.style.width = `${containerWidth - scrollBarWidth}px`;
+  wrapper.style.height = `${container.clientHeight}px`;
+  wrapper.style.overflowY = 'hidden';
+  wrapper.style.position = 'relative';
 
-  wrapper.style.position = 'absolute';
-
-  containerWrapper.appendChild(wrapper);
-  container.appendChild(containerWrapper);
-  container.appendChild(fakeDiv);
+  container.appendChild(wrapper);
   
   const preRender = () => {
     const content = Array.from(renderElements)
@@ -34,48 +32,71 @@ const createScroll = ({ container, elements }) => {
         const attributes = Array.from(e.attributes).map(attr => `${attr.name}="${attr.value}"`).join(' ');
         return `${cal}<div ${attributes}>${e.innerHTML}</div>`;
       }, '');
-    fakeDiv.innerHTML = content;
+    wrapper.innerHTML = content;
     window.requestAnimationFrame(() => {
-      fakeDiv.style.height = fakeDiv.scrollHeight + scrollBarWidth + 'px';
-      cache = Array.from(fakeDiv.querySelectorAll('div')).map(div => {
+      containerHeight = wrapper.style.height = wrapper.scrollHeight + scrollBarWidth + 'px';
+      cache = Array.from(wrapper.querySelectorAll('div')).map(div => {
         return {
           height: div.clientHeight,
           top: div.offsetTop
         };
       })
-      fakeDiv.innerHTML = '';
+      while (wrapper.firstChild) {
+        wrapper.removeChild(wrapper.firstChild);
+      }
       render(currentIndex);
     });
   }
   
   const render = (index) => {
-    let renderContent = '';
-    for (let i = index; i < index + renderCount & i < renderElements.length; i ++ ){
-      const e = renderElements[i];
-      const attributes = Array.from(e.attributes).map(attr => `${attr.name}="${attr.value}"`).join(' ');
-      renderContent += `<div ${attributes}>${e.innerHTML}</div>`
+    while (wrapper.firstChild) {
+      wrapper.removeChild(wrapper.firstChild);
     }
-    wrapper.innerHTML = renderContent;
+    const frag = document.createDocumentFragment();
+    for (let i = index; i < index + renderCount & i < renderElements.length; i ++ ){
+      if (!cache[i].dom) {
+        const div = document.createElement('div');
+        Array.from(renderElements[i].attributes).forEach((attr) => {
+          div.setAttribute(attr.name, attr.value);
+        });
+        div.style.position = 'absolute';
+        div.style.transform = `translate(0px, ${cache[i].top}px)`;
+        div.innerHTML = renderElements[i].innerHTML;
+        cache[i].dom = div;
+      }
+      frag.appendChild(cache[i].dom);
+    }
+    wrapper.appendChild(frag);
   }
   
-  container.addEventListener('scroll', () => {
-    window.requestAnimationFrame(() => {
-      const dy = container.scrollTop;
-      const index = cache.findIndex(e => dy + borderTop >= e.top && dy + borderTop <= e.top + e.height) ;
-      if (index === -1) {
-        return;
-      }
-      const currentDiv = cache[index];
-      wrapper.style.transform = `translate(0px, ${-(dy - currentDiv.top + borderTop)}px)`;
-      // only recalculate when index changed
-      if (currentIndex !== index) {
-        render(index);
-      }
-      currentIndex = index;
-    })
-  });
-  containerWrapper.addEventListener('wheel', (e) => {
-    container.scrollTop += e.deltaY; 
-  });
+  const debounce = (fn, t) => {
+    let isLocked = false;
+    
+    return function (...args) {
+      if (!isLocked) {
+        isLocked = true;
+        setTimeout(() => {
+          fn(...args);
+          isLocked = false;
+        }, t);
+      };
+    }
+  }
+  const scrollEvent = () => {
+    const dy = container.scrollTop;
+    const index = cache.findIndex(e => dy >= e.top && dy < e.top + e.height);
+    if (index < 0) {
+      return;
+    }
+    if ((index + bufferCount >= currentBottomIndex || index - bufferCount <= currentBottomIndex) && currentTopIndex !== index) {
+      currentTopIndex = index;
+      currentBottomIndex = index + renderCount;
+      render(index);
+    }
+    // wrapper.style.height = containerHeight;
+  }
+
+  // container.addEventListener('scroll', debounce(scrollEvent, debounceTime));
+  container.addEventListener('scroll', scrollEvent);
   preRender();
 }

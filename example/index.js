@@ -9,7 +9,7 @@ const stringList = [
 
 const colorList = [
   'red',
-  'white',
+  'orange',
   'blue',
   'yellow',
   'green'
